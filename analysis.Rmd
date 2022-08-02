@@ -1,0 +1,29 @@
+---
+title: "Social Capital"
+author: "Tejas Mundhe"
+date: "2022-08-02"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+library(ggthemes)
+library(plotly)
+```
+
+```{r grap_data}
+raw_data <- read_rds("ec.rds")
+# glimpse(raw_data)
+```
+
+```{r clean_data}
+clean_data <- raw_data |>
+  mutate(state = str_remove(county_name, ".*, "))
+# summary(clean_data)
+```
+
+```{r plot}
+
+```
+
