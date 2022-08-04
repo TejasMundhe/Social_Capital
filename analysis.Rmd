@@ -19,11 +19,62 @@ raw_data <- read_rds("ec.rds")
 
 ```{r clean_data}
 clean_data <- raw_data |>
-  mutate(state = str_remove(county_name, ".*, "))
+  mutate(state = str_remove(county_name, ".*, ")) |>
+  drop_na()
 # summary(clean_data)
 ```
 
 ```{r plot}
+ec_plot <- clean_data |>
+  ggplot(mapping = aes(x = pop2018, y = ec_county)) +
+  geom_point(shape = 21, color = "steelblue") +
+  geom_smooth(method = "loess", formula = y ~ x, se = FALSE, color = "pink", size = 1.5) +
+  scale_x_log10(breaks = c(1000, 10000, 100000, 1000000, 10000000),
+                labels = c("1,000", "10,000", "100,0000", "1,000000", "10,000,000")) +
+  labs(title = "Economic Connectedness by Population",
+       subtitle = "Population doesn't seem to correlate to economic connectedness",
+       x = "Population",
+       y = "Economic Connectedness",
+       caption = "Source: New York Times") +
+  theme_clean()
+
+ec_plot
+```
+
+<br>
+
+```{r table1, warning = FALSE}
+library(gt)
+clean_data |>
+  select(county_name, pop2018, ec_county) |>
+  mutate(pop2018 = as.numeric(pop2018)) |>
+  arrange(desc(pop2018)) |>
+  slice(1:8) |>
+  gt() |>
+  tab_header(title = "Top 8 Most Populated U.S Counties") |>
+  cols_label(county_name = "County", pop2018 = "Population", ec_county = "EC Score") |>
+  data_color(columns = c(pop2018),
+             colors = scales::col_numeric(palette = c(
+        "yellow", "red", "purple"),
+        domain = c(2000000, 10000000)))
+```
+
+
+<br>
+
+```{r table2, warning = FALSE}
+clean_data |>
+  select(county_name, pop2018, ec_county) |>
+  mutate(pop2018 = as.numeric(pop2018)) |>
+  arrange(pop2018) |>
+  slice(1:8) |>
+  gt() |>
+  tab_header(title = "Top 8 Least Populated U.S Counties", subtitle = "Only includes counties without NA data") |>
+  cols_label(county_name = "County", pop2018 = "Population", ec_county = "EC Score") |>
+  data_color(columns = c(pop2018),
+             colors = scales::col_numeric(palette = c(
+        "yellow", "red", "purple"),
+        domain = c(1000, 2000)))
 
 ```
 
