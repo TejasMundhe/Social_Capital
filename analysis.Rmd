@@ -10,6 +10,7 @@ knitr::opts_chunk$set(echo = FALSE)
 library(tidyverse)
 library(ggthemes)
 library(plotly)
+library(patchwork)
 ```
 
 ```{r grap_data}
@@ -20,43 +21,47 @@ raw_data <- read_rds("ec.rds")
 ```{r clean_data}
 clean_data <- raw_data |>
   mutate(state = str_remove(county_name, ".*, ")) |>
-  drop_na()
+  drop_na() |>
+  group_by(state) |>
+  summarize(state_pop = sum(pop2018), avg_ec = mean(ec_county))
 # summary(clean_data)
 ```
 
-```{r plot}
+```{r plot, fig.align='center'}
 ec_plot <- clean_data |>
-  ggplot(mapping = aes(x = pop2018, y = ec_county)) +
+  ggplot(mapping = aes(x = state_pop, y = avg_ec)) +
   geom_point(shape = 21, color = "steelblue") +
   geom_smooth(method = "loess", formula = y ~ x, se = FALSE, color = "pink", size = 1.5) +
-  scale_x_log10(breaks = c(1000, 10000, 100000, 1000000, 10000000),
-                labels = c("1,000", "10,000", "100,0000", "1,000000", "10,000,000")) +
-  labs(title = "Economic Connectedness by Population",
-       subtitle = "Population doesn't seem to correlate to economic connectedness",
-       x = "Population",
+  scale_x_log10(breaks = c(500000, 1000000, 3000000, 10000000, 40000000),
+                labels = c("500,000", "1,000000", "3,000,000", "10,000,000", "40,000,000")) +
+  labs(title = "Economic Connectedness by State Population",
+       subtitle = "More populated states tend to have a lower average economic connectedness",
+       x = "State Population",
        y = "Economic Connectedness",
        caption = "Source: New York Times") +
   theme_clean()
 
-ec_plot
+ggplotly(ec_plot)
 ```
 
+
+<br>
 <br>
 
 ```{r table1, warning = FALSE}
 library(gt)
 clean_data |>
-  select(county_name, pop2018, ec_county) |>
-  mutate(pop2018 = as.numeric(pop2018)) |>
-  arrange(desc(pop2018)) |>
+  select(state, state_pop, avg_ec) |>
+  mutate(state_pop = as.numeric(state_pop)) |>
+  arrange(desc(state_pop)) |>
   slice(1:8) |>
   gt() |>
-  tab_header(title = "Top 8 Most Populated U.S Counties") |>
-  cols_label(county_name = "County", pop2018 = "Population", ec_county = "EC Score") |>
-  data_color(columns = c(pop2018),
+  tab_header(title = "EC Scores for Top 8 Most Populated States") |>
+  cols_label(state = "State", state_pop = "Population", avg_ec = "EC Score") |>
+  data_color(columns = c(state_pop),
              colors = scales::col_numeric(palette = c(
         "yellow", "red", "purple"),
-        domain = c(2000000, 10000000)))
+        domain = c(10000000, 40000000)))
 ```
 
 
@@ -64,17 +69,17 @@ clean_data |>
 
 ```{r table2, warning = FALSE}
 clean_data |>
-  select(county_name, pop2018, ec_county) |>
-  mutate(pop2018 = as.numeric(pop2018)) |>
-  arrange(pop2018) |>
+  select(state, state_pop, avg_ec) |>
+  mutate(state_pop = as.numeric(state_pop)) |>
+  arrange(state_pop) |>
   slice(1:8) |>
   gt() |>
-  tab_header(title = "Top 8 Least Populated U.S Counties", subtitle = "Only includes counties without NA data") |>
-  cols_label(county_name = "County", pop2018 = "Population", ec_county = "EC Score") |>
-  data_color(columns = c(pop2018),
+  tab_header(title = "EC Scores for Top 8 Least Populated States") |>
+  cols_label(state = "State", state_pop = "Population", avg_ec = "EC Score") |>
+  data_color(columns = c(state_pop),
              colors = scales::col_numeric(palette = c(
         "yellow", "red", "purple"),
-        domain = c(1000, 2000)))
+        domain = c(550000, 1020000)))
 
 ```
 
